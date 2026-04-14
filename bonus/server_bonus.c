@@ -6,71 +6,63 @@
 /*   By: zgtaib <zgtaib@student.42.fr>              +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/03/18 14:13:17 by zgtaib            #+#    #+#             */
-/*   Updated: 2024/04/20 14:11:06 by zgtaib           ###   ########.fr       */
+/*   Updated: 2024/06/22 15:38:29 by zgtaib           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "minitalk_bonus.h"
 
-int converting_back(int pid, int x, int *hold)
-{	
-	int i;
-	int ascii;
-	
-	if (x == 8)
-	{	
-		x = 0;
-		i = 0;
-		ascii = 0;
-		while (i < 8)
+void	write_byte(int *i, char *bit, int pid)
+{
+	if (*i == 0)
+	{
+		if (*bit == '\0')
 		{
-			ascii |= hold[i] << (7 - i);
-			i++;
-		}
-		if (ascii == '\0')
-		{	
-			free(hold);
 			kill(pid, SIGUSR1);
 			write(1, "\n", 1);
 		}
-		else 	
-			write(1, &ascii, 1);
+		else
+			write(1, bit, 1);
+		*i = 8;
+		*bit = 0;
 	}
-	return (x);
 }
-void handler(int sig, siginfo_t *info, void *con)
+
+void	handler(int sig, siginfo_t *info, void *con)
 {
-	static int	*hold;
-	static int	x; 
+	static char	bit;
+	static int	i = 7;
 	static int	pid;
-	
-	(void)con;	
-	if(info->si_pid != pid)
+
+	(void)con;
+	if (pid == 0)
+		pid = info->si_pid;
+	else if (info->si_pid != pid)
 	{
-		x = 0;
-		hold = NULL;  
+		pid = info->si_pid;
+		i = 7;
+		bit = 0;
 	}
-	pid = info->si_pid;
-	 if (hold == NULL)
-	 	hold = malloc(8 * sizeof(int));
-			if(!hold)
-				exit(1);
-	if (sig == SIGUSR1)
-		hold[x] = 0;
-	else if (sig == SIGUSR2)
-		hold[x] = 1;
-	x++;
-	x = converting_back(pid, x, hold);
+	if (sig == SIGUSR2)
+		bit |= (1 << i);
+	else if (sig == SIGUSR1)
+		bit |= (0 << i);
+	write_byte(&i, &bit, pid);
+	i--;
 }
-int main()
-{	
-	struct sigaction sa;
+
+int	main(void)
+{
+	struct sigaction	sa;
+
 	ft_putnbr(getpid());
 	write(1, "\n", 1);
 	sa.sa_sigaction = &handler;
-	sa.sa_flags = SA_SIGINFO; 
-	sigaction(SIGUSR1, &sa, NULL);
-	sigaction(SIGUSR2, &sa, NULL);	
+	sa.sa_flags = SA_SIGINFO;
+	if (sigaction(SIGUSR1, &sa, NULL) == -1)
+		return (1);
+	if (sigaction(SIGUSR2, &sa, NULL) == -1)
+		return (1);
 	while (1)
 	{
 		pause();

@@ -3,7 +3,7 @@ NAME_S = server
 NAME_C_B = client_bonus
 NAME_S_B = server_bonus
 CC = cc
-CFLAGS = -Wall -Wextra -Werror -fsanitize=address
+CFLAGS = -Wall -Wextra -Werror
 SRC_SC_D = mandatory
 SRC_SC_D_B = bonus
 INCLUDES = mandatory/minitalk.h
